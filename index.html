@@ -334,28 +334,25 @@ function sortPeriodos(arr) {
 }
 
 function transformRows(raw) {
+  // Obtenemos todos los códigos para la lógica de "Cuenta Padre"
   var codigos = [...new Set(raw.map(function(r){ return String(r.cuenta).trim(); }))];
   
   return raw.map(function(r){
     var cl = clasificar(r.cuenta, codigos);
     if (!cl) return null;
     
-    // PASO 1: Convertimos a número y quitamos CUALQUIER signo previo (positivo o negativo)
-    var valorAbsoluto = Math.abs(parseFloat(r.monto) || 0); 
+    // 1. Forzamos el valor a positivo absoluto (quitamos el signo de la DB)
+    var valorLimpio = Math.abs(parseFloat(r.monto) || 0); 
     var montoFinal = 0;
     
-    // PASO 2: Asignamos el signo que el Dashboard necesita para sumar/restar bien
+    // 2. Asignamos el signo según nuestra necesidad de gestión
     if (cl.tipo === 'Ingreso') {
-      // Queremos que los ingresos sean POSITIVOS para las gráficas y KPIs
-      montoFinal = valorAbsoluto; 
-    } 
-    else if (cl.tipo === 'Costo') {
-      montoFinal = 0; // Según tu regla de la cuenta 5*
-    } 
-    else {
-      // Gastos Operativos y de Grupo: Los dejamos POSITIVOS para que se vean en las tablas,
-      // la función de cálculo (rebuild) se encargará de restarlos del ingreso.
-      montoFinal = valorAbsoluto;
+      montoFinal = valorLimpio; // Siempre positivo
+    } else if (cl.tipo === 'Costo') {
+      montoFinal = 0; // Tu regla de la cuenta 5*
+    } else {
+      // Gastos (Operativos y Grupo)
+      montoFinal = valorLimpio; // Siempre positivo
     }
     
     return { 
