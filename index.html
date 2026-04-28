@@ -266,21 +266,29 @@ const UNIDADES = ['Fletes', 'Carrocería'];
 // Las cuentas padre se excluyen; solo se toman las cuentas hoja (sin hijos).
 function clasificar(cuenta, todosCodigos) {
   var c = String(cuenta).trim();
+
+  // 1. Excluir explícitamente cuentas de mayor/acumulativas que causan ruido
+  const cuentasIgnorar = ['40000000', '40100000', '40140000'];
+  if (cuentasIgnorar.includes(c)) return null;
+
+  // 2. Lógica de padre (se excluye si alguna cuenta empieza con su código)
   var esPadre = todosCodigos.some(function(o){ return o !== c && o.startsWith(c); });
   if (esPadre) return null;
 
+  // 3. Reglas de Clasificación
   if (c.startsWith('4')) {
     if (c.startsWith('4014')) return { tipo:'Ingreso',         unidad:'Fletes'     };
     if (c.startsWith('4010')) return { tipo:'Ingreso',         unidad:'Carrocería' };
     return                           { tipo:'Ingreso',         unidad:'General'    };
   }
-  if (c.startsWith('5')) return     { tipo:'Costo',            unidad:'General'    };
+  if (c.startsWith('5')) return      { tipo:'Costo',            unidad:'General'    };
   if (c.startsWith('6')) {
-    if (c.startsWith('601'))                           return { tipo:'Gasto Operativo', unidad:'Fletes'     };
+    if (c.startsWith('601'))                          return { tipo:'Gasto Operativo', unidad:'Fletes'     };
     if (c.startsWith('603') || c.startsWith('604'))   return { tipo:'Gasto Operativo', unidad:'Carrocería' };
-    return                                                   { tipo:'Gasto Operativo', unidad:'General'    };
+    return                                            { tipo:'Gasto Operativo', unidad:'General'    };
   }
   if (c.startsWith('7')) return { tipo:'Gasto Grupo', unidad:'Grupo' };
+  
   return null;
 }
 
@@ -330,15 +338,21 @@ function transformRows(raw) {
   return raw.map(function(r){
     var cl = clasificar(r.cuenta, codigos);
     if (!cl) return null;
-    var m = parseFloat(r.monto) || 0;
+    
+    // Forzamos el valor absoluto para ignorar si el sistema los arroja con signo negativo/positivo
+    var m = Math.abs(parseFloat(r.monto) || 0); 
     var monto;
+    
     if (cl.tipo === 'Ingreso') {
-      monto = r.tipo_movimiento === 'Abono' ? m : -m;
+      // Naturaleza Acreedora: Los abonos suman al ingreso, los cargos restan.
+      monto = r.tipo_movimiento === 'Abono' ? m : -m; 
     } else if (cl.tipo === 'Costo') {
       monto = 0;
     } else {
-      monto = r.tipo_movimiento === 'Cargo' ? m : -m;
+      // Gastos (Op o Grupo) Naturaleza Deudora: Los cargos suman al gasto, los abonos restan.
+      monto = r.tipo_movimiento === 'Cargo' ? m : -m; 
     }
+    
     return { periodo: MESES[r.mes-1]+' '+r.anio, cuenta: String(r.cuenta).trim(),
              nombre: r.nombre, tipo: cl.tipo, unidad: cl.unidad, monto };
   }).filter(Boolean);
