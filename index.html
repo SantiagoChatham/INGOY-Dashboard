@@ -339,18 +339,19 @@ function transformRows(raw) {
     var cl = clasificar(r.cuenta, codigos);
     if (!cl) return null;
     
-    // Forzamos el valor absoluto para ignorar si el sistema los arroja con signo negativo/positivo
-    var m = Math.abs(parseFloat(r.monto) || 0); 
-    var monto;
+    // Tomamos el valor numérico tal cual viene de la base de datos
+    var m = parseFloat(r.monto) || 0; 
+    var monto = 0;
     
     if (cl.tipo === 'Ingreso') {
-      // Naturaleza Acreedora: Los abonos suman al ingreso, los cargos restan.
-      monto = r.tipo_movimiento === 'Abono' ? m : -m; 
+      // Invertimos el signo: un ingreso de -5000 se vuelve 5000.
+      // (Si hay una devolución en positivo, se volverá negativa y restará correctamente).
+      monto = m * -1; 
     } else if (cl.tipo === 'Costo') {
       monto = 0;
     } else {
-      // Gastos (Op o Grupo) Naturaleza Deudora: Los cargos suman al gasto, los abonos restan.
-      monto = r.tipo_movimiento === 'Cargo' ? m : -m; 
+      // Gastos Operativos y de Grupo: Se quedan con el signo que traen (generalmente positivo).
+      monto = m; 
     }
     
     return { periodo: MESES[r.mes-1]+' '+r.anio, cuenta: String(r.cuenta).trim(),
