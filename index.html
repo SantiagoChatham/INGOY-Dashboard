@@ -334,18 +334,19 @@ function sortPeriodos(arr) {
 }
 
 function transformRows(raw) {
-  return raw.map(function(r){
-    // Ya no necesitamos llamar a la función clasificar() ni validar signos
+  // MESES está definido arriba en tu config
+  return raw.map(function(r) {
     return { 
       periodo: MESES[r.mes-1] + ' ' + r.anio, 
       cuenta: r.cuenta,
       nombre: r.nombre, 
       tipo: r.tipo, 
       unidad: r.unidad, 
-      monto: r.monto_final 
+      monto: parseFloat(r.monto_final) || 0 
     };
   });
 }
+  
 // ══ INIT ════════════════════════════════════════════════════════
 window.onload = async function() {
   try {
