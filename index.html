@@ -308,7 +308,7 @@ async function fetchBalanza() {
   var all = [], from = 0, size = 1000;
   while (true) {
     var res = await fetch(
-      SUPABASE_URL + '/rest/v1/balanza?select=*&order=anio,mes,cuenta',
+      SUPABASE_URL + '/rest/v1/v_movimientos_clasificados?select=*&order=anio,mes,cuenta',
       { headers:{
           'apikey': SUPABASE_APIKEY,
           'Authorization': 'Bearer ' + SUPABASE_APIKEY,
@@ -334,38 +334,18 @@ function sortPeriodos(arr) {
 }
 
 function transformRows(raw) {
-  // Obtenemos todos los códigos para la lógica de "Cuenta Padre"
-  var codigos = [...new Set(raw.map(function(r){ return String(r.cuenta).trim(); }))];
-  
   return raw.map(function(r){
-    var cl = clasificar(r.cuenta, codigos);
-    if (!cl) return null;
-    
-    // 1. Forzamos el valor a positivo absoluto (quitamos el signo de la DB)
-    var valorLimpio = Math.abs(parseFloat(r.monto) || 0); 
-    var montoFinal = 0;
-    
-    // 2. Asignamos el signo según nuestra necesidad de gestión
-    if (cl.tipo === 'Ingreso') {
-      montoFinal = valorLimpio; // Siempre positivo
-    } else if (cl.tipo === 'Costo') {
-      montoFinal = 0; // Tu regla de la cuenta 5*
-    } else {
-      // Gastos (Operativos y Grupo)
-      montoFinal = valorLimpio; // Siempre positivo
-    }
-    
+    // Ya no necesitamos llamar a la función clasificar() ni validar signos
     return { 
       periodo: MESES[r.mes-1] + ' ' + r.anio, 
-      cuenta: String(r.cuenta).trim(),
+      cuenta: r.cuenta,
       nombre: r.nombre, 
-      tipo: cl.tipo, 
-      unidad: cl.unidad, 
-      monto: montoFinal 
+      tipo: r.tipo, 
+      unidad: r.unidad, 
+      monto: r.monto_final 
     };
-  }).filter(Boolean);
+  });
 }
-
 // ══ INIT ════════════════════════════════════════════════════════
 window.onload = async function() {
   try {
