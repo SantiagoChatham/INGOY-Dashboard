@@ -7,7 +7,7 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 :root {
   --bg: #F0F4FA;
@@ -28,7 +28,6 @@
   --r: 16px;
   --r-sm: 10px;
   --fn: 'DM Sans', sans-serif;
-  --fn-disp: 'DM Serif Display', serif;
   --sidebar-w: 220px;
 }
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -113,7 +112,7 @@ html, body { height: 100%; font-family: var(--fn); background: var(--bg); color:
   border-bottom: 1px solid var(--border);
   box-shadow: var(--shadow-sm);
 }
-.tb-title { font-family: var(--fn-disp); font-size: 18px; color: var(--navy); }
+.tb-title { font-family: var(--fn); font-size: 18px; font-weight: 800; color: var(--navy); letter-spacing: -.4px; }
 .tb-subtitle { font-size: 11px; color: var(--muted); font-weight: 400; }
 .tb-controls { display: flex; align-items: center; gap: 10px; }
 select.ctrl {
@@ -131,8 +130,8 @@ select.ctrl:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(61,124
 /* ── KPI STRIP ── */
 #kpiStrip {
   display: grid; grid-template-columns: repeat(6, 1fr);
-  gap: 14px;
-  padding: 18px 28px 0;
+  gap: 10px;
+  padding: 12px 28px 0;
 }
 .kpi {
   background: var(--surface);
@@ -160,10 +159,10 @@ select.ctrl:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(61,124
 #pages { position: relative; overflow: hidden; }
 .page { display: none; position: absolute; inset: 0; overflow: hidden; }
 .page.active { display: flex; flex-direction: column; }
-.pb { flex: 1; padding: 18px 28px 20px; display: flex; flex-direction: column; gap: 16px; overflow: hidden; }
+.pb { flex: 1; padding: 12px 28px 14px; display: flex; flex-direction: column; gap: 10px; overflow: hidden; }
 .pb.scroll { overflow-y: auto; overflow-x: hidden; }
 
-.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; flex: 1; min-height: 0; }
+.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; flex: 1; min-height: 0; }
 
 /* ── CARDS ── */
 .card {
@@ -294,7 +293,6 @@ tbody tr:hover td { background: rgba(61,124,244,.04); }
   <div id="sidebar">
     <div class="sb-logo">
       <img src="https://ingoy.mx/assets/img/logos/logo_vertical_blanco.png" onerror="this.style.display='none'">
-      <span class="sb-logo-txt">Ingoy</span>
     </div>
 
     <div class="sb-section">Vistas</div>
@@ -846,11 +844,11 @@ function bar(id, labels, series) {
           callbacks: { label: function(ctx){ return '  ' + abbr(ctx.parsed.y); } }
         },
         datalabels: {
-          display: function(ctx){ return ctx.datasetIndex === 0 || ds.length === 1; },
+          display: true,
           anchor: 'end', align: 'top', clamp: true,
           formatter: function(v){ return abbr(v); },
           font: { family: FN, size: 8, weight: '600' },
-          color: '#0C2340'
+          color: function(ctx){ return ctx.dataset.hoverBackgroundColor || '#0C2340'; }
         }
       }
     }
