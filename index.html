@@ -104,6 +104,9 @@ html, body { height: 100%; font-family: var(--fn); background: var(--bg); color:
 /* ── MAIN ── */
 #main { display: grid; grid-template-rows: 64px auto 1fr; overflow: hidden; }
 
+/* ── TOPBAR LOGO (mobile only) ── */
+#topbar-logo { display: none; height: 28px; margin-right: 14px; }
+
 /* ── TOPBAR ── */
 #topbar {
   display: flex; align-items: center; justify-content: space-between;
@@ -241,6 +244,10 @@ tbody tr:hover td { background: rgba(61,124,244,.04); }
   #shell { grid-template-columns: 1fr; grid-template-rows: auto; height: auto; min-height: 100dvh; }
   #sidebar { display: none; }
   #main { grid-template-rows: auto auto 1fr; }
+  #topbar { background: var(--navy); border-bottom: none; box-shadow: none; padding: 0 16px; }
+  .tb-title { color: #fff; font-size: 15px; }
+  .tb-subtitle { color: rgba(255,255,255,.5); }
+  #topbar-logo { display: block; }
   #kpiStrip { grid-template-columns: repeat(3,1fr); padding: 14px 16px 0; }
   #pages { position: static; min-height: 0; }
   .page { position: static; display: none; inset: auto; overflow: visible; }
@@ -250,7 +257,6 @@ tbody tr:hover td { background: rgba(61,124,244,.04); }
   .row2 { grid-template-columns: 1fr; flex: none; }
   .det-row { min-height: auto; }
   .chart-wrap { min-height: 220px; }
-  /* show mobile topnav */
   #mob-nav { display: flex !important; }
 }
 @media(max-width:520px) {
@@ -337,11 +343,11 @@ tbody tr:hover td { background: rgba(61,124,244,.04); }
 
     <!-- TOPBAR -->
     <div id="topbar">
+      <img id="topbar-logo" src="https://ingoy.mx/assets/img/logos/logo_vertical_blanco.png" onerror="this.style.display='none'">
       <div>
         <div class="tb-title">Estado de Resultados</div>
         <div class="tb-subtitle">Resumen financiero consolidado</div>
       </div>
-      <div id="mob-nav-toparea" style="display:none"></div>
     </div>
 
     <!-- Mobile nav -->
