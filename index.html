@@ -219,7 +219,7 @@ tbody tr:hover td{background:rgba(61,124,244,.04);}
 .mob-nav-btn.active{color:var(--accent);border-bottom-color:var(--accent);}
 
 /* ══════════ HOJA: ESTADO DE RESULTADOS ══════════ */
-#pageER .edr-bar{display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;background:var(--surface);border:1px solid var(--border);border-radius:var(--r-sm);padding:12px 16px;margin-bottom:14px;box-shadow:var(--shadow-sm);}
+#pageER .edr-bar{display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;background:var(--surface);border:1px solid var(--border);border-radius:var(--r-sm);padding:12px 16px;box-shadow:var(--shadow-sm);flex:0 0 auto;}
 .edr-fg{display:flex;flex-direction:column;gap:4px;}
 .edr-fg>label{font-size:9.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;}
 .edr-fg select,.edr-fg input[type=text]{font-family:var(--fn);font-size:12px;font-weight:500;padding:7px 10px;border-radius:8px;border:1.5px solid var(--border);background:var(--surface2);color:var(--text);outline:none;transition:border-color .15s;}
@@ -229,26 +229,48 @@ tbody tr:hover td{background:rgba(61,124,244,.04);}
 .edr-pill{font-family:var(--fn);font-size:11.5px;font-weight:600;padding:7px 12px;border-radius:8px;border:1.5px solid var(--border);background:var(--surface2);color:var(--muted);cursor:pointer;transition:all .15s;white-space:nowrap;}
 .edr-pill:hover{border-color:rgba(12,35,64,.22);color:var(--text);}
 .edr-pill.active{background:rgba(0,196,140,.14);border-color:var(--green);color:#03815F;}
-#pageER .edr-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:14px;}
+#pageER .edr-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;flex:0 0 auto;}
 #pageER .edr-kpi{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-sm);padding:13px 15px;box-shadow:var(--shadow-sm);}
 #pageER .edr-kpi-lbl{font-size:9.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px;}
 #pageER .edr-kpi-val{font-size:19px;font-weight:700;letter-spacing:-.4px;color:var(--text);}
 #pageER .edr-kpi-val.g{color:#00996B;}#pageER .edr-kpi-val.r{color:#D94A48;}
 #pageER .edr-kpi-sub{font-size:10px;color:var(--muted);margin-top:3px;}
-#pageER .edr-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);box-shadow:var(--shadow-sm);overflow:hidden;}
-#pageER .edr-hd{padding:13px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;}
+#pageER .edr-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);box-shadow:var(--shadow-sm);overflow:hidden;flex:1 1 auto;min-height:0;display:flex;flex-direction:column;}
+#pageER .edr-hd{padding:13px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;flex:0 0 auto;}
 #pageER .edr-hd-t{font-size:13px;font-weight:700;color:var(--text);}
 #pageER .edr-hd-s{font-size:11px;color:var(--muted);margin-top:2px;}
 #pageER .edr-btn{font-family:var(--fn);font-size:11px;font-weight:600;padding:6px 12px;border-radius:8px;border:1.5px solid var(--border);background:var(--surface2);color:var(--muted);cursor:pointer;transition:all .15s;}
 #pageER .edr-btn:hover{color:var(--text);border-color:rgba(12,35,64,.22);}
-#edrScroll{overflow:auto;max-height:calc(100vh - 330px);}
+#edrScroll{flex:1 1 auto;min-height:120px;overflow:auto;}
 #edrTbl{border-collapse:separate;border-spacing:0;font-size:12px;width:100%;font-family:var(--fn);}
+/* ── CABECERA Y COLUMNAS FIJAS ──────────────────────────────────────────
+   El dashboard pinta `thead tr` de navy y lo pega a top:0 para sus otras
+   tablas. Aquí esa regla sobra y hace daño: si el <tr> se pega, las dos
+   filas de la cabecera aterrizan en la misma coordenada y se enciman, y su
+   fondo navy asoma como una franja entre ellas. El anclaje vive en los <th>,
+   nunca en el <tr>. Va con !important para que no dependa del orden en que
+   queden las reglas si alguien reordena la hoja más adelante.
+
+   Planos de apilamiento, de atrás hacia adelante:
+     1 · celdas normales del cuerpo      (sin z-index)
+     2 · columnas fijas del cuerpo       (z 2)
+     4 · filas de la cabecera            (z 4)
+     6 · esquina cabecera + columna fija (z 6)
+   Toda celda anclada necesita fondo opaco: si es transparente, el contenido
+   que pasa por debajo se transparenta encima. ───────────────────────────── */
+#edrTbl thead tr{background:transparent!important;color:inherit!important;position:static!important;top:auto!important;z-index:auto!important;}
+/* Misma razón: la regla global alinea todas las celdas a la derecha. */
+#edrTbl thead th,#edrTbl tbody td{text-align:left;}
+#edrTbl thead th.r,#edrTbl tbody td.r{text-align:right;}
+#edrTbl thead th.ctr{text-align:center;}
 #edrTbl thead th{text-align:left;font-weight:600;color:var(--muted);font-size:9.5px;padding:8px 13px;border-bottom:1px solid var(--border);text-transform:uppercase;letter-spacing:.05em;white-space:nowrap;background:var(--surface2);position:sticky;top:0;z-index:4;}
 #edrTbl thead th.r{text-align:right;}
 #edrTbl thead th.ctr{text-align:center;}
-#edrTbl thead tr.h1 th{height:26px;padding:5px 13px;}
+#edrTbl thead tr.h1 th{height:var(--edr-h1,26px);padding:5px 13px;}
 #edrTbl thead tr.h1 th.grp{border-left:1px solid var(--border);background:#EDF1F8;color:var(--navy);font-weight:700;}
-#edrTbl thead tr.h2 th{top:26px;padding:5px 9px;font-size:9px;}
+/* --edr-h1 la mide el JS después de cada render: un 26px fijo se desalinea
+   en cuanto cambia el zoom del navegador o la fuente. */
+#edrTbl thead tr.h2 th{top:var(--edr-h1,26px);padding:5px 9px;font-size:9px;}
 #edrTbl thead tr.h2 th.u0{border-left:1px solid var(--border);}
 #edrTbl tbody td{padding:8px 13px;border-bottom:1px solid rgba(12,35,64,.05);color:var(--text);white-space:nowrap;}
 #edrTbl tbody td.r{text-align:right;}
@@ -261,10 +283,13 @@ tbody tr:hover td{background:rgba(61,124,244,.04);}
 #edrTbl td.ttc{font-weight:700;background:#F5F8FF!important;border-left:2px solid var(--border);}
 #edrTbl th.ttc{background:#EDF2FD!important;border-left:2px solid rgba(12,35,64,.18)!important;}
 /* columnas fijas: Cuenta y Nombre */
-#edrTbl thead th.sk1{position:sticky;left:0;z-index:6;width:92px;min-width:92px;max-width:92px;background:var(--surface2);}
-#edrTbl thead th.sk2{position:sticky;left:92px;z-index:6;min-width:230px;background:var(--surface2);border-right:1.5px solid var(--border);}
-#edrTbl tbody td:nth-child(1){position:sticky;left:0;z-index:3;width:92px;min-width:92px;max-width:92px;background:var(--surface);}
-#edrTbl tbody td:nth-child(2){position:sticky;left:92px;z-index:3;min-width:230px;background:var(--surface);border-right:1.5px solid var(--border);}
+#edrTbl thead th.sk1{position:sticky;left:0;top:0;z-index:6;width:92px;min-width:92px;max-width:92px;background:var(--surface2);}
+#edrTbl thead th.sk2{position:sticky;left:92px;top:0;z-index:6;min-width:230px;background:var(--surface2);border-right:1.5px solid var(--border);}
+/* Con la cabecera anclada, el cuerpo pasa por debajo: sin un separador la
+   última fila que entra se confunde con los títulos. */
+#edrTbl thead th{box-shadow:0 1px 0 var(--border);}
+#edrTbl tbody td:nth-child(1){position:sticky;left:0;z-index:2;width:92px;min-width:92px;max-width:92px;background:var(--surface);}
+#edrTbl tbody td:nth-child(2){position:sticky;left:92px;z-index:2;min-width:230px;background:var(--surface);border-right:1.5px solid var(--border);}
 #edrTbl tbody tr:hover td:nth-child(1),#edrTbl tbody tr:hover td:nth-child(2){background:#F4F7FF;}
 /* filas de grupo */
 #edrTbl tr.g-row td{background:#EAEFFA!important;font-weight:700;font-size:11px;color:var(--navy);padding:9px 13px;cursor:pointer;user-select:none;}
@@ -282,7 +307,11 @@ tbody tr:hover td{background:rgba(61,124,244,.04);}
 #edrTbl .b-c{background:#FDF1DC;color:#8A5600;}
 #edrTbl .b-go{background:#FDECEB;color:#9A2F2D;}
 #edrTbl .b-gg{background:#ECEEF5;color:#4B5983;}
-@media(max-width:900px){#edrScroll{max-height:calc(100vh - 380px);}}
+@media(max-width:960px){
+  #pageER .pb{overflow:visible;}
+  #pageER .edr-card{flex:none;}
+  #edrScroll{max-height:70vh;}
+}
 </style>
 </head>
 <body>
@@ -375,7 +404,7 @@ tbody tr:hover td{background:rgba(61,124,244,.04);}
         </div></div>
 
         <!-- ESTADO DE RESULTADOS -->
-        <div class="page" id="pageER"><div class="pb scroll">
+        <div class="page" id="pageER"><div class="pb">
 
           <div class="edr-bar">
             <div class="edr-fg"><label>Vista</label>
@@ -651,17 +680,39 @@ function rebuild(){
       ingFiltP[r.periodo]=(ingFiltP[r.periodo]||0)+r.monto;
   });
 
+  /* Reparto del Gasto Grupo.
+     Un periodo puede cerrar sin ingresos o con un residuo de centavos (p.ej.
+     Sep 2026 cierra con $0.06 en la cuenta 40301000). Repartir por % de ingreso
+     sobre una base así hace que unos centavos se lleven el gasto completo del mes
+     y que el resto de las unidades reciba cero. Por debajo de un peso de base se
+     usa el reparto del acumulado del rango, que sí es representativo. */
+  var BASE_MIN=1;
+  var ingAcumUni={},ingAcumTot=0;
+  RAW_ROWS.forEach(function(r){
+    if(r.tipo!=='Ingreso'||periodos.indexOf(r.periodo)===-1)return;
+    ingAcumTot+=r.monto;
+    ingAcumUni[r.unidad]=(ingAcumUni[r.unidad]||0)+r.monto;
+  });
+  var ingAcumSel=0;
+  Object.keys(ingAcumUni).forEach(function(u){ if(uniIn(u)) ingAcumSel+=ingAcumUni[u]; });
+  /* fracción del Gasto Grupo de `p` que corresponde a las unidades dadas */
+  function fracGG(p,acumParte,periodoParte){
+    if((ingTotP[p]||0)>=BASE_MIN) return periodoParte/(ingTotP[p]||1);
+    if(ingAcumTot>=BASE_MIN)      return acumParte/ingAcumTot;
+    return 0;
+  }
+
   var erResult=periodos.map(function(p){
     var pRows=RAW_ROWS.filter(function(r){return r.periodo===p&&(uniIn(r.unidad)||r.tipo==='Gasto Grupo');});
     var ingreso=pRows.filter(function(r){return r.tipo==='Ingreso';}).reduce(function(s,r){return s+r.monto;},0);
     var costo=getCostoPeriodoSel(p);
     var gastoOp=pRows.filter(function(r){return r.tipo==='Gasto Operativo';}).reduce(function(s,r){return s+r.monto;},0);
-    var pctU=(ingTotP[p]||0)>0?(ingFiltP[p]||0)/(ingTotP[p]||1):(uniTodas()?1:0);
-    var gastoG=(ggTotP[p]||0)*(uniTodas()?1:pctU);
+    var pctU=uniTodas()?1:fracGG(p,ingAcumSel,(ingFiltP[p]||0));
+    var gastoG=(ggTotP[p]||0)*pctU;
     var uBruta=ingreso-costo,uOp=uBruta-gastoOp,uNeta=uOp-gastoG;
     return{periodo:p,ingreso,costo,gastoOp,gastoG,uBruta,uOp,uNeta,
-      pctUBruta:ingreso?uBruta/ingreso:0,pctUOp:ingreso?uOp/ingreso:0,pctUNeta:ingreso?uNeta/ingreso:0,
-      pctCosto:ingreso?costo/ingreso:0};
+      pctUBruta:ingreso>=BASE_MIN?uBruta/ingreso:0,pctUOp:ingreso>=BASE_MIN?uOp/ingreso:0,
+      pctUNeta:ingreso>=BASE_MIN?uNeta/ingreso:0,pctCosto:ingreso>=BASE_MIN?costo/ingreso:0};
   });
 
   var unids=unidsSel();
@@ -672,12 +723,12 @@ function rebuild(){
       var ingreso=uRows.filter(function(r){return r.tipo==='Ingreso';}).reduce(function(s,r){return s+r.monto;},0);
       var costo=getCostoPeriodoUnidad(p,u);
       var gastoOp=uRows.filter(function(r){return r.tipo==='Gasto Operativo';}).reduce(function(s,r){return s+r.monto;},0);
-      var pctU=(ingTotP[p]||0)>0?ingreso/(ingTotP[p]||1):0;
+      var pctU=fracGG(p,(ingAcumUni[u]||0),ingreso);
       var gastoG=(ggTotP[p]||0)*pctU;
       var uBruta=ingreso-costo,uOp=uBruta-gastoOp,uNeta=uOp-gastoG;
       tablaUnidades.push({periodo:p,unidad:u,ingreso,costo,gastoOp,gastoG,uBruta,uOp,uNeta,
-        pctUBruta:ingreso?uBruta/ingreso:0,pctUOp:ingreso?uOp/ingreso:0,pctUNeta:ingreso?uNeta/ingreso:0,
-        pctCosto:ingreso?costo/ingreso:0});
+        pctUBruta:ingreso>=BASE_MIN?uBruta/ingreso:0,pctUOp:ingreso>=BASE_MIN?uOp/ingreso:0,
+        pctUNeta:ingreso>=BASE_MIN?uNeta/ingreso:0,pctCosto:ingreso>=BASE_MIN?costo/ingreso:0});
     });
   });
 
@@ -1218,9 +1269,18 @@ function edrBuild(periodos, search){
     if(!ingUni[r.unidad]) ingUni[r.unidad]={};
     ingUni[r.unidad][r.periodo]=(ingUni[r.unidad][r.periodo]||0)+r.monto;
   });
+  /* Mismo criterio que el motor: si el periodo no tiene una base de ingreso
+     representativa (menos de un peso), se reparte según el acumulado del rango. */
+  var BASE_MIN=1, ingAcumTot=0, ingAcumUni={};
+  Object.keys(ingUni).forEach(function(u){
+    ingAcumUni[u]=periodos.reduce(function(a,p){return a+((ingUni[u]||{})[p]||0);},0);
+    ingAcumTot+=ingAcumUni[u];
+  });
   var factor=function(uni,p){
     var t=ingTot[p]||0;
-    return t>0 ? (((ingUni[uni]||{})[p])||0)/t : 0;
+    if(t>=BASE_MIN) return (((ingUni[uni]||{})[p])||0)/t;
+    if(ingAcumTot>=BASE_MIN) return (ingAcumUni[uni]||0)/ingAcumTot;
+    return 0;
   };
 
   var B={}; EDR_BUCKETS.forEach(function(b){ B[b]={total:0, per:{}, u:{}, rows:{}}; });
@@ -1451,7 +1511,25 @@ function renderER(){
 
   tbl.querySelector('tbody').innerHTML = html ||
     '<tr><td colspan="'+ncols+'" style="text-align:center;padding:28px;color:var(--muted)">Sin resultados</td></tr>';
+
+  edrMedirCabecera();
 }
+
+/* La segunda fila de la cabecera (FLE/CAR/GEN) se ancla justo debajo de la
+   primera (los periodos). Ese desplazamiento es la altura real de la primera
+   fila, que cambia con el zoom del navegador y con la fuente que acabe
+   cargando, así que se mide después de pintar en vez de fijarla en el CSS.
+   Sin esto las dos filas aterrizan encima una de otra al hacer scroll. */
+function edrMedirCabecera(){
+  var tbl=document.getElementById('edrTbl'); if(!tbl) return;
+  var h1=tbl.querySelector('thead tr.h1');
+  if(!h1){ tbl.style.removeProperty('--edr-h1'); return; }
+  var alto=Math.round(h1.getBoundingClientRect().height);
+  if(alto>0) tbl.style.setProperty('--edr-h1', alto+'px');
+}
+/* La fuente web puede llegar después del primer render y cambiar la altura. */
+if(document.fonts && document.fonts.ready) document.fonts.ready.then(edrMedirCabecera);
+window.addEventListener('resize', edrMedirCabecera);
 
 function hexA(hex,a){
   if(hex.startsWith('rgba')){var m=hex.match(/[\d.]+/g);return 'rgba('+m[0]+','+m[1]+','+m[2]+','+a+')';}
