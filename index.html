@@ -173,6 +173,7 @@ main#paginas{flex:1;min-width:0;}
 .buscar:focus{outline:none;border-color:var(--acento-borde);}
 .vacio{padding:34px 20px;text-align:center;color:var(--tinta-3);font-size:.92rem;}
 .vacio .btn{margin-top:12px;}
+.spin-chico{width:22px;height:22px;border-radius:50%;border:2px solid var(--acento-borde);border-top-color:var(--acento);animation:gira .8s linear infinite;margin:0 auto 10px;}
 .historia{font-size:.92rem;color:var(--tinta-2);padding:0 22px 16px;max-width:90ch;}
 .historia b{color:var(--tinta);font-weight:600;}
 
@@ -609,7 +610,7 @@ const UCOL={'Fletes':'var(--serie-1)','Carrocería':'var(--serie-2)','General':'
 const CUAT={C1:[1,2,3,4],C2:[5,6,7,8],C3:[9,10,11,12]};
 
 /* Estado */
-var RAW_ROWS=[], COSTOS_ROWS=[], PROD_ROWS=[], PROD_ERR=null;
+var RAW_ROWS=[], COSTOS_ROWS=[];
 var KEYS=[], YEARS=[];
 var IDX=null;
 var F={anio:null, meses:new Set(), cuat:null, comp:'anio', unis:new Set(['Fletes','Carrocería'])};
@@ -693,25 +694,38 @@ async function fetchAll(path,paso){
 }
 function pasoLoader(t){var el=$('loaderPaso');if(el)el.textContent=t;}
 
+/* Carga bajo demanda: cada página pide a Supabase solo lo que necesita, ya sumado,
+   y lo guarda en memoria. Al terminar vuelve a pintar la página si sigue abierta. */
+var LAZY={};
+function lazy(clave,fn,pagina){
+  var e=LAZY[clave];
+  if(e&&e.ok)return e.data;
+  if(e&&e.err)return {error:e.err};
+  if(!e){
+    LAZY[clave]={};
+    fn().then(function(d){LAZY[clave]={ok:true,data:d};if(PAG===pagina)PAGINAS[pagina].r();})
+        .catch(function(err){LAZY[clave]={err:err.message||String(err)};if(PAG===pagina)PAGINAS[pagina].r();});
+  }
+  return null;
+}
+/* Filtro PostgREST para un conjunto de periodos: or=(and(anio.eq.2026,mes.in.(1,2)),…) */
+function filtroPeriodos(keys){
+  var porA={};keys.forEach(function(k){(porA[kA(k)]=porA[kA(k)]||[]).push(kM(k));});
+  return 'or=('+Object.keys(porA).map(function(a){return 'and(anio.eq.'+a+',mes.in.('+porA[a].join(',')+'))';}).join(',')+')';
+}
+function cargando(t){return '<div class="vacio"><div class="spin-chico"></div>'+(t||'Cargando…')+'</div>';}
+
 window.addEventListener('load',async function(){
   if(localStorage.getItem('ingoy-tema')==='dark')document.documentElement.dataset.theme='dark';
   try{
-    var nB=0,nC=0;
+    pasoLoader('Balanza y costos del periodo');
     var r=await Promise.all([
-      fetchAll('v_movimientos_clasificados?select=anio,mes,cuenta,nombre,tipo,unidad,monto_final&order=anio,mes,cuenta,tipo_movimiento,unidad',function(n){nB=n;pasoLoader('Balanza: '+nB.toLocaleString('es-MX')+' · costos: '+nC.toLocaleString('es-MX')+' renglones');}),
-      fetchAll('costos?select=anio,mes,unidad,producto,referencia,importe_total&order=id',function(n){nC=n;pasoLoader('Balanza: '+nB.toLocaleString('es-MX')+' · costos: '+nC.toLocaleString('es-MX')+' renglones');}),
-      fetchAll('costos_produccion?select=id,anio,mes,folio,codigo_proyecto,proyecto,area,codigo_producto,producto,unidades,costo_especifico,importe_total&order=id').catch(function(e){PROD_ERR=e.message||String(e);return[];})
+      fetchAll('v_movimientos_clasificados?select=anio,mes,cuenta,nombre,tipo,unidad,monto_final&order=anio,mes,cuenta,tipo_movimiento,unidad'),
+      fetchAll('v_costos_ref?select=anio,mes,unidad,referencia,importe&order=anio,mes')
     ]);
     RAW_ROWS=r[0].map(function(x){var a=+x.anio,m=+x.mes;return{periodo:kOf(a,m),anio:a,mes:m,cuenta:x.cuenta,nombre:x.nombre,tipo:x.tipo,unidad:x.unidad,monto:parseFloat(x.monto_final)||0};});
-    COSTOS_ROWS=r[1].map(function(x){var a=+x.anio,m=+x.mes;return{periodo:kOf(a,m),anio:a,mes:m,unidad:x.unidad||'Carrocería',producto:x.producto||'Sin nombre',referencia:(x.referencia&&String(x.referencia).trim())||'Sin referencia',importe:parseFloat(x.importe_total)||0};});
-    PROD_ROWS=r[2].map(function(x){
-      var cod=(x.codigo_proyecto||'Sin proyecto').trim(),nom=(x.proyecto||'').trim();
-      /* «Caribug4 202  TRANSP DE PERSONAL DAIMLER» → «TRANSP DE PERSONAL DAIMLER» */
-      var cli=nom.indexOf(cod)===0?nom.slice(cod.length):nom.replace(/^\S+\s+\d+\s*/,'');
-      return{periodo:kOf(+x.anio,+x.mes),folio:x.folio,proyecto:cod,cliente:cli.replace(/\s+/g,' ').trim(),area:x.area||'SIN ÁREA',
-        codProd:x.codigo_producto||'',producto:x.producto||'Sin nombre',unidades:parseFloat(x.unidades)||0,
-        importe_total:parseFloat(x.importe_total)||0,costo_especifico:parseFloat(x.costo_especifico)||0};
-    });
+    /* Costo de producción ya sumado en Supabase por mes, unidad y área */
+    COSTOS_ROWS=r[1].map(function(x){var a=+x.anio,m=+x.mes;return{periodo:kOf(a,m),anio:a,mes:m,unidad:x.unidad||'Carrocería',referencia:x.referencia||'Sin referencia',importe:parseFloat(x.importe)||0};});
     CARGADO_EN=new Date();
     indexar();
     initFiltros();
@@ -1455,8 +1469,18 @@ function renderCosto(){
   items.forEach(function(it,i){it.c=SER[i%SER.length];it.pie=pctx(cos?it.v/cos:null)+' del costo';});
   gHoriz($('cAreas'),{items:items.slice(0,14),fila:32,left:150,vacio:'Sin costo en el periodo'});
 
-  /* Insumos */
-  var pr={};rows.forEach(function(r){var o=pr[r.producto]=pr[r.producto]||{n:r.producto,v:0,ref:{}};o.v+=r.importe;o.ref[r.referencia]=1;});
+  /* Insumos: se piden a Supabase ya sumados, solo para los meses elegidos */
+  if(!sel.length){$('cInsumos').innerHTML=vacio('Sin periodos');return;}
+  var ins=lazy('ins|'+sel.join(','),function(){return fetchAll('v_costos_producto?select=anio,mes,unidad,producto,referencias,importe&'+filtroPeriodos(sel));},'costo');
+  if(!ins){$('cInsumos').innerHTML=cargando('Cargando insumos…');return;}
+  if(ins.error){$('cInsumos').innerHTML=vacio('No se pudieron leer los insumos: '+esc(ins.error));return;}
+  var pr={};
+  ins.forEach(function(r){
+    if(!F.unis.has(r.unidad||'Carrocería'))return;
+    var o=pr[r.producto]=pr[r.producto]||{n:r.producto,v:0,ref:{}};
+    o.v+=parseFloat(r.importe)||0;
+    String(r.referencias||'').split(' · ').forEach(function(x){if(x)o.ref[x]=1;});
+  });
   var lst=Object.values(pr).filter(function(x){return Math.abs(x.v)>=1;});
   lst.sort(function(a,b){var c=C_SORT.col;if(c==='n')return C_SORT.asc?a.n.localeCompare(b.n,'es'):b.n.localeCompare(a.n,'es');return C_SORT.asc?a.v-b.v:b.v-a.v;});
   if(C_SORT.col==='v'&&!C_SORT.asc)lst=lst.slice(0,25);
@@ -1473,20 +1497,36 @@ function renderCosto(){
    el área (CREFERENCIA normalizada). Usa los filtros de año y mes. */
 var P_SEL=null;
 function cmpProy(a,b){return a.localeCompare(b,'es',{numeric:true});}
+function clienteDe(cod,nom){
+  nom=(nom||'').trim();
+  /* «Caribug4 202  TRANSP DE PERSONAL DAIMLER» → «TRANSP DE PERSONAL DAIMLER» */
+  var cli=nom.indexOf(cod)===0?nom.slice(cod.length):nom.replace(/^\S+\s+\d+\s*/,'');
+  return cli.replace(/\s+/g,' ').trim();
+}
+function prodAgg(){
+  return lazy('proyArea',function(){
+    return fetchAll('v_costos_produccion_proy_area?select=anio,mes,codigo_proyecto,proyecto,area,movimientos,importe_total,costo_especifico').then(function(raw){
+      return raw.map(function(x){var cod=(x.codigo_proyecto||'Sin proyecto').trim();
+        return{periodo:kOf(+x.anio,+x.mes),proyecto:cod,cliente:clienteDe(cod,x.proyecto),area:x.area||'SIN ÁREA',movimientos:+x.movimientos||0,
+          importe_total:parseFloat(x.importe_total)||0,costo_especifico:parseFloat(x.costo_especifico)||0};});
+    });
+  },'proyectos');
+}
 function renderProyectos(){
   var sel=selKeys(),B=SEG.pbase,ks={};sel.forEach(function(k){ks[k]=1;});
   $('pTit').textContent='Costo por proyecto '+rango(sel);
-  if(PROD_ERR){$('pAlc').textContent='';$('pKpis').innerHTML='';$('pCuerpo').innerHTML=vacio('No se pudo leer costos_produccion: '+esc(PROD_ERR));return;}
-  var disp=[...new Set(PROD_ROWS.map(function(r){return r.periodo;}))].sort();
-  var rows=PROD_ROWS.filter(function(r){return ks[r.periodo];});
+  var PROD=prodAgg(),cuerpo=$('pCuerpo');
+  if(!PROD){$('pAlc').textContent='Salidas por producción de Contpaq Comercial';$('pKpis').innerHTML='<div class="kpi" style="grid-column:1/-1">'+cargando('Cargando costo por proyecto…')+'</div>';return;}
+  if(PROD.error){$('pAlc').textContent='';$('pKpis').innerHTML='<div class="kpi" style="grid-column:1/-1">'+vacio('No se pudo leer costos_produccion: '+esc(PROD.error))+'</div>';return;}
+  var disp=[...new Set(PROD.map(function(r){return r.periodo;}))].sort();
+  var rows=PROD.filter(function(r){return ks[r.periodo];});
   $('pAlc').textContent='Salidas por producción de Contpaq Comercial · '+(B==='importe_total'?'importe total':'costo específico')+' · hay datos de '+rango(disp)+(F.unis.has('Carrocería')?'':' · los proyectos son de Carrocería, que no está en el alcance');
-  var cuerpo=$('pCuerpo');
   if(!rows.length){
     $('pKpis').innerHTML='';
     cuerpo.querySelectorAll('.tarjeta').forEach(function(x){x.style.display='none';});
     var v=$('pVacio');if(!v){v=document.createElement('div');v.id='pVacio';cuerpo.appendChild(v);}
     v.style.display='';
-    v.innerHTML='<section class="tarjeta">'+vacio('No hay salidas por producción en '+esc(rango(sel))+'. Por ahora la tabla tiene '+esc(rango(disp))+'.','<br><button class="btn" onclick="verMesesProd()">Ver '+esc(rango(disp))+'</button>')+'</section>';
+    v.innerHTML='<section class="tarjeta">'+vacio('No hay salidas por producción en '+esc(rango(sel))+'. La tabla tiene '+esc(rango(disp))+'.','<br><button class="btn" onclick="verMesesProd()">Ver '+esc(rango(disp))+'</button>')+'</section>';
     return;
   }
   cuerpo.querySelectorAll('.tarjeta').forEach(function(x){x.style.display='';});
@@ -1500,10 +1540,11 @@ function renderProyectos(){
   proys=proys.filter(function(p){return Math.abs(tot[p]||0)>0.005;});
   var topP=proys.reduce(function(m,p){return(tot[p]||0)>(tot[m]||0)?p:m;},proys[0]);
   var dif=rows.reduce(function(s,r){return s+r.importe_total-r.costo_especifico;},0);
+  var nMov=rows.reduce(function(s,r){return s+r.movimientos;},0);
 
   /* KPIs */
   var h='';
-  h+=kpi(ICO.cos,'Costo de producción',gran,undefined,'',kbarra(1,rows.length.toLocaleString('es-MX')+' movimientos',areas.length+' áreas'));
+  h+=kpi(ICO.cos,'Costo de producción',gran,undefined,'',kbarra(1,nMov.toLocaleString('es-MX')+' movimientos',areas.length+' áreas'));
   h+=kpi(ICO.ub,'Promedio por proyecto',gran/proys.length,undefined,'',kbarra(proys.length?1/proys.length:0,proys.length+' proyectos con consumo',''));
   h+=kpi(ICO.un,'Mayor costo · '+topP,tot[topP],undefined,'',kbarra(tot[topP]/gran,pctx(tot[topP]/gran,0)+' del total',esc(cli[topP]||'')));
   h+=kpi(ICO.rev.replace(/width="19" height="19"/,'width="16" height="16"'),'Total vs específico',dif,undefined,'',kbarra(gran?Math.abs(dif)/gran:0,Math.abs(dif)>1?'Las dos columnas no cuadran':'Cuadran',Math.abs(dif)>1?pctx(Math.abs(dif)/gran)+' del total':''));
@@ -1529,10 +1570,18 @@ function renderProyectos(){
   $('pMatriz').innerHTML=m;
   $('pMatriz').querySelectorAll('tr.clk').forEach(function(tr){tr.addEventListener('click',function(){P_SEL=tr.dataset.p;renderProyectos();});});
 
-  /* Detalle del proyecto seleccionado */
-  var pr=rows.filter(function(r){return r.proyecto===P_SEL;}),tp=tot[P_SEL]||0,byA={};
+  /* Detalle del proyecto seleccionado: se pide solo ese proyecto y esos meses */
+  var tp=tot[P_SEL]||0,byA={};
   $('pDetTit').textContent='Detalle de insumos · '+P_SEL;
   $('pDetSub').textContent=(cli[P_SEL]?cli[P_SEL]+' · ':'')+'agrupado por área · más caro primero';
+  var selP=sel.filter(function(k){return rows.some(function(r){return r.periodo===k&&r.proyecto===P_SEL;});});
+  var pr=lazy('det|'+P_SEL+'|'+selP.join(','),function(){
+    return fetchAll('costos_produccion?select=folio,area,codigo_producto,producto,unidades,costo_especifico,importe_total&codigo_proyecto=eq.'+encodeURIComponent(P_SEL)+'&'+filtroPeriodos(selP)).then(function(raw){
+      return raw.map(function(x){return{folio:x.folio,area:x.area||'SIN ÁREA',codProd:x.codigo_producto||'',producto:x.producto||'Sin nombre',unidades:parseFloat(x.unidades)||0,importe_total:parseFloat(x.importe_total)||0,costo_especifico:parseFloat(x.costo_especifico)||0};});
+    });
+  },'proyectos');
+  if(!pr){$('pDetalle').innerHTML=cargando('Cargando insumos de '+esc(P_SEL)+'…');return;}
+  if(pr.error){$('pDetalle').innerHTML=vacio('No se pudo leer el detalle: '+esc(pr.error));return;}
   pr.forEach(function(r){var k=r.codProd+'|'+r.producto;byA[r.area]=byA[r.area]||{};var o=byA[r.area][k]=byA[r.area][k]||{cod:r.codProd,n:r.producto,u:0,v:0,f:{}};o.u+=r.unidades;o.v+=r[B];o.f[r.folio]=1;});
   var grupos=Object.keys(byA).map(function(a){var it=Object.values(byA[a]).sort(function(x,y){return y.v-x.v;});return{a:a,it:it,t:it.reduce(function(s,i){return s+i.v;},0)};}).sort(function(x,y){return y.t-x.t;});
   var d='<table class="tab"><thead><tr><th>Área / insumo</th><th>Unidades</th><th>Costo unitario</th><th>Importe</th><th>% del proyecto</th><th>Folios</th></tr></thead><tbody>';
@@ -1544,7 +1593,8 @@ function renderProyectos(){
   $('pDetalle').innerHTML=d;
 }
 function verMesesProd(){
-  var disp=[...new Set(PROD_ROWS.map(function(r){return r.periodo;}))].sort();
+  var PROD=prodAgg();if(!PROD||PROD.error)return;
+  var disp=[...new Set(PROD.map(function(r){return r.periodo;}))].sort();
   if(!disp.length)return;
   var ys=[...new Set(disp.map(kA))];
   F.anio=ys.length===1?ys[0]:'todos';F.meses=new Set(disp.map(kM));F.cuat=null;
@@ -1561,7 +1611,7 @@ const EDR_COLOR={'Ingreso':'var(--positivo)','Costo':'var(--acento-vivo)','Gasto
 const EDR_UNI_ABBR={'Fletes':'Fle','Carrocería':'Car','General':'Gen'};
 var EDR_VISTA='unidad',EDR_PRES='periodo',EDR_SEARCH='',EDR_STATES={},EDR_COSTAGG=[];
 
-/* Los costos llegan a nivel producto (~40k filas): se agregan una vez por referencia. */
+/* Costo por periodo, unidad y área (ya viene sumado de v_costos_ref). */
 function edrBuildCostAgg(){
   var map={};
   COSTOS_ROWS.forEach(function(r){var k=r.periodo+'|'+r.unidad+'|'+r.referencia;if(!map[k])map[k]={periodo:r.periodo,unidad:r.unidad,referencia:r.referencia,importe:0};map[k].importe+=r.importe;});
