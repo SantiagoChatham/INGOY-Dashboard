@@ -408,6 +408,30 @@ svg.graf{display:block;width:100%;height:auto;overflow:visible;}
 #pag-general .encabezado{padding-top:16px;padding-bottom:10px;}
 #pag-general .tarjeta>header{padding-top:14px;}
 #pag-general .tarjeta>.cont{padding-top:6px;padding-bottom:12px;}
+
+/* ═══ Encabezado compacto ═══ */
+.top{min-height:52px;padding:7px 22px;gap:8px;}
+.top h1{font-size:1.2rem;}
+.top .pildora,.top .btn{height:32px;font-size:.82rem;padding:0 11px;}
+.top .btn-ico{width:32px;padding:0;}
+.filtros{padding:7px 22px;gap:6px 8px;}
+.filtros .dd>summary{height:28px;font-size:.82rem;padding:0 9px;}
+.filtros .meta{font-size:.78rem;}
+.top,.filtros{padding-left:var(--margen);padding-right:var(--margen);}
+.top .plegar svg{color:var(--tinta-2);}
+
+/* ═══ Barra lateral plegable ═══ */
+.side{transition:width .2s ease,padding .2s ease;}
+.logo-iso{display:none;width:44px;height:34px;margin:2px auto 20px;flex-shrink:0;
+  background:url(https://ingoy.mx/assets/img/logos/logo_vertical_blanco.png) no-repeat;background-size:133.5px auto;background-position:-43.6px 1.5px;}
+body.plegada .side{width:68px;padding-left:10px;padding-right:10px;overflow-x:hidden;}
+body.plegada .logo{display:none;}
+body.plegada .logo-iso{display:block;}
+body.plegada .grupo-t{font-size:0;height:1px;background:rgb(255 255 255 / .16);margin:12px 6px 10px;}
+body.plegada .item{font-size:0;justify-content:center;padding:9px 0;gap:0;}
+body.plegada .side-pie{display:none;}
+body.plegada .plegar .fl{transform:rotate(180deg);transform-origin:14px 12px;}
+@media (max-width:767px){.top .plegar{display:none;}body.plegada .side{width:210px;}body.plegada .logo{display:grid;}body.plegada .logo-iso{display:none;}body.plegada .item{font-size:.95rem;justify-content:flex-start;padding:8px 10px;gap:10px;}body.plegada .grupo-t{font-size:.72rem;height:auto;background:none;margin:12px 10px 6px;}body.plegada .side-pie{display:block;}}
 /* ═══════════════════════════════ RESPONSIVO ═══════════════════════════════ */
 @media (max-width:1279px){
 }
@@ -453,6 +477,7 @@ svg.graf{display:block;width:100%;height:auto;overflow:visible;}
   <!-- ═══════════ MENÚ ═══════════ -->
   <aside class="side" aria-label="Menú">
     <div class="logo"><img src="https://ingoy.mx/assets/img/logos/logo_vertical_blanco.png" alt="INGOY" onerror="this.style.display='none';this.nextElementSibling.style.display='block'"><span class="logo-txt">INGOY</span><small>Tablero financiero</small></div>
+    <div class="logo-iso" role="img" aria-label="INGOY"></div>
 
     <div class="grupo-t">ESTADO DE RESULTADOS</div>
     <button class="item on" data-pag="general"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>General</button>
@@ -471,9 +496,10 @@ svg.graf{display:block;width:100%;height:auto;overflow:visible;}
     <!-- ═══════════ BARRA SUPERIOR ═══════════ -->
     <div class="top">
       <button class="btn btn-ico hamb" onclick="document.body.classList.toggle('menu')" aria-label="Menú"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M3 12h18M3 18h18"/></svg></button>
+      <button class="btn btn-ico plegar" id="btnPlegar" aria-label="Cerrar barra lateral" title="Cerrar barra lateral"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16"/><path class="fl" d="m15 10-2 2 2 2"/></svg></button>
       <h1 id="tTitulo">General</h1>
       <span class="pildora datos" id="pDatos" title=""><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--acento)" stroke-width="1.8"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v14c0 1.7 3.6 3 8 3s8-1.3 8-3V5"/><path d="M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/></svg>Datos al <b id="pDatosTxt">—</b></span>
-      <details class="dd" data-dd="uni"><summary class="pildora" style="height:40px;border-radius:999px;font-weight:600;color:var(--tinta)"><span id="uniTxt">Fletes + Carrocería</span> <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg></summary>
+      <details class="dd" data-dd="uni"><summary class="pildora" style="border-radius:999px;font-weight:600;color:var(--tinta)"><span id="uniTxt">Fletes + Carrocería</span> <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg></summary>
         <div class="pop der" id="uniPop"></div>
       </details>
       <button class="btn" onclick="imprimir()" title="Imprimir o guardar como PDF"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M12 18v-6M9 15l3 3 3-3"/></svg>PDF</button>
@@ -967,6 +993,15 @@ function cambio(){pintarFiltros();render();}
 function wire(){
   /* Menú */
   document.querySelectorAll('.item[data-pag]').forEach(function(b){b.addEventListener('click',function(){ir(b.dataset.pag);document.body.classList.remove('menu');});});
+  /* Barra lateral plegable: se recuerda entre visitas */
+  document.querySelectorAll('.item[data-pag]').forEach(function(b){b.title=b.textContent.trim();});
+  function plegar(on){
+    document.body.classList.toggle('plegada',on);
+    var bt=$('btnPlegar'),tx=on?'Abrir barra lateral':'Cerrar barra lateral';bt.title=tx;bt.setAttribute('aria-label',tx);
+    try{localStorage.setItem('ingoy_plegada',on?'1':'0');}catch(e){}
+  }
+  try{if(localStorage.getItem('ingoy_plegada')==='1')plegar(true);}catch(e){}
+  $('btnPlegar').addEventListener('click',function(){plegar(!document.body.classList.contains('plegada'));setTimeout(function(){window.dispatchEvent(new Event('resize'));},230);});
   window.addEventListener('hashchange',function(){var h=location.hash.replace('#','');if(PAGINAS[h]&&h!==PAG)ir(h,true);});
   /* Desplegables: uno abierto a la vez; clic fuera cierra */
   document.querySelectorAll('details.dd').forEach(function(d){d.addEventListener('toggle',function(){if(d.open)cerrarDD(d);});});
